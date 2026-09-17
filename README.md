@@ -37,11 +37,12 @@ Listo — Vercel sirve `index.html`/`app.css`/`app.js` como estáticos y `api/cl
 Abrí la URL que te da Vercel, pegá texto de ejemplo o un link, y tocá "Limpiar y continuar" → "Escuchar".
 
 ## Limitaciones a tener en cuenta
-- **PDF**: no está implementado en este MVP (solo `.txt`). Agregar soporte requiere una librería de parseo de PDF en el servidor (ej. `pdf-parse`) dentro de `api/clean.js`.
-- **Reproducción en segundo plano**: el navegador puede pausar la síntesis de voz si cerrás la pestaña o bloqueás el celular, según el navegador/SO. Para segundo plano real (con la app cerrada) hace falta generar audio real (TTS a archivo) y reproducirlo con la Media Session API — no está incluido acá.
+- **Reproducción en segundo plano**: el navegador puede pausar la síntesis de voz si cerrás la pestaña o bloqueás el celular, según el navegador/SO. Para segundo plano real (con la app cerrada) hace falta generar audio real (TTS a archivo) y reproducirlo con la Media Session API.
 - **Compartir desde otra app**: no está implementado (requiere configurar la app como PWA con Web Share Target API, o apps nativas). El botón "Compartir" mencionado en la pantalla de Nuevo es un placeholder de la idea.
 - **Costo**: cada "Limpiar y continuar" hace una llamada a la API de Claude — revisá tu uso/facturación en console.anthropic.com.
 - **Voces**: la voz depende del navegador/SO del usuario (Web Speech API); no hay control sobre qué voz específica usa.
+- **PDF/Word**: se extraen con `pdf-parse` y `mammoth` en el servidor. PDFs escaneados (imágenes sin texto real) no van a funcionar — solo texto seleccionable.
+- **Descargar audio**: usa la captura de audio de la pestaña del navegador (`getDisplayMedia`), sin ningún servicio externo. Funciona bien en Chrome/Edge de escritorio (hay que tildar "Compartir audio de la pestaña" en el diálogo de permiso); en Safari y la mayoría de navegadores de celular no está soportado. El archivo se descarga en `.webm`, no en `.mp3` — es audio real, pero el contenedor no es mp3 (la mayoría de reproductores lo abren igual).
 
 ## Estructura
 ```

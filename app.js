@@ -16,6 +16,8 @@
     headphones: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2" y="14" width="5" height="7"/><rect x="17" y="14" width="5" height="7"/></svg>',
     home: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
     clock: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>',
+    prev: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 20V4"/><path d="M6 12l13 8V4z"/></svg>',
+    next: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4v16"/><path d="M18 12L5 4v16z"/></svg>',
     sliders: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="18" r="1.8"/><path d="M4 6h5"/><path d="M15 6h5"/><path d="M4 12h5"/><path d="M15 12h5"/><path d="M4 18h5"/><path d="M15 18h5"/></svg>'
   };
 
@@ -57,7 +59,7 @@
       '<div style="display:flex;flex-direction:column;gap:12px">' +
       '<button class="kv-card-btn" data-action="open-paste-text">' + ICON.clipboard + '<div style="flex:1"><div class="card-title" style="font-size:15px">Pegar texto</div><div class="card-body">Texto copiado de una página web</div></div>' + ICON.chevron + '</button>' +
       '<button class="kv-card-btn" data-action="open-paste-link">' + ICON.link + '<div style="flex:1"><div class="card-title" style="font-size:15px">Pegar un link</div><div class="card-body">Kodama abre la página y lee el artículo</div></div>' + ICON.chevron + '</button>' +
-      '<button class="kv-card-btn" data-action="open-upload-file">' + ICON.upload + '<div style="flex:1"><div class="card-title" style="font-size:15px">Subir archivo</div><div class="card-body">TXT (PDF: próximamente)</div></div>' + ICON.chevron + '</button>' +
+      '<button class="kv-card-btn" data-action="open-upload-file">' + ICON.upload + '<div style="flex:1"><div class="card-title" style="font-size:15px">Subir archivo</div><div class="card-body">PDF, Word (.docx) o TXT</div></div>' + ICON.chevron + '</button>' +
       '</div><hr class="hr">' +
       '<div style="display:flex;gap:12px;align-items:flex-start">' + ICON.share +
       '<p class="kv-muted" style="font-size:12.5px;margin:0">También podés compartir texto o un link desde cualquier otra app usando el botón Compartir y eligiendo Kodama Virtual.</p></div>';
@@ -79,8 +81,8 @@
 
   function screenUploadFile() {
     return errorBanner() + '<div style="border:2px dashed var(--color-divider);padding:32px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center">' +
-      ICON.upload + '<p class="kv-muted" style="margin:0;font-size:13px">TXT por ahora (PDF: próximamente)</p>' +
-      '<input type="file" id="file-input" accept=".txt" style="display:none">' +
+      ICON.upload + '<p class="kv-muted" style="margin:0;font-size:13px">PDF, Word (.docx) o TXT</p>' +
+      '<input type="file" id="file-input" accept=".txt,.pdf,.docx" style="display:none">' +
       '<button class="btn btn-secondary" data-action="pick-file">Elegir archivo</button></div>';
   }
 
@@ -117,7 +119,7 @@
       var style = isHi
         ? (state.darkReading ? 'background:var(--color-accent-500);color:#1a1210' : 'background:var(--color-accent-100);color:var(--color-accent-800)')
         : (state.darkReading ? 'color:rgba(255,255,255,.82)' : 'color:var(--color-text)');
-      return '<p class="kv-sentence" style="' + style + '">' + esc(text) + '</p>';
+      return '<p class="kv-sentence" style="cursor:pointer;' + style + '" data-action="seek" data-value="' + i + '">' + esc(text) + '</p>';
     }).join('');
     var total = a.sentences.length;
     var progress = total > 1 ? Math.round((state.currentSentence / (total - 1)) * 100) : (state.playing ? 100 : 0);
@@ -126,14 +128,19 @@
       '<h5 style="margin-bottom:16px">' + esc(a.title) + '</h5>' +
       '<div style="margin-bottom:16px">' + sentencesHtml + '</div>' +
       '<div style="height:3px;background:var(--color-divider);margin-bottom:16px"><div style="height:3px;background:var(--color-accent);width:' + progress + '%"></div></div>' +
-      '<div style="display:flex;align-items:center;justify-content:center;margin-bottom:16px">' +
-      '<button class="btn btn-icon" style="width:56px;height:56px;background:var(--color-accent);color:var(--color-bg)" data-action="toggle-play">' + (state.playing ? ICON.pause : ICON.play) + '</button></div>' +
+      '<div style="display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:16px">' +
+      '<button class="btn btn-icon" data-action="prev-sentence">' + ICON.prev + '</button>' +
+      '<button class="btn btn-icon" style="width:56px;height:56px;background:var(--color-accent);color:var(--color-bg)" data-action="toggle-play">' + (state.playing ? ICON.pause : ICON.play) + '</button>' +
+      '<button class="btn btn-icon" data-action="next-sentence">' + ICON.next + '</button>' +
+      '</div>' +
       segControl('speed', SPEEDS.map(function (v) { return { label: v + 'x', value: v, action: 'set-speed', checked: state.speed === v }; })) +
       '<div style="display:flex;gap:8px;margin-top:12px">' +
       '<button class="btn btn-secondary" style="flex:1;' + (state.highlightOn ? activeBtn : '') + '" data-action="toggle-highlight">Resaltar</button>' +
       '<button class="btn btn-icon btn-secondary" style="' + (state.darkReading ? activeBtn : '') + '" data-action="toggle-dark">' + ICON.moon + '</button>' +
       '<button class="btn btn-icon btn-secondary" style="' + (state.bgPlayback ? activeBtn : '') + '" data-action="toggle-bg">' + ICON.headphones + '</button>' +
       '</div>' +
+      '<button class="btn btn-secondary btn-block" data-action="record-audio" ' + (state.recording ? 'disabled' : '') + '>' + (state.recording ? 'Grabando…' : 'Descargar audio (MP3/WebM)') + '</button>' +
+      '<p class="kv-muted" style="font-size:11px;margin-top:6px">Te va a pedir compartir esta pestaña con audio — funciona mejor en Chrome/Edge de escritorio.</p>' +
       (state.bgPlayback ? '<p class="kv-muted" style="font-size:11.5px;margin-top:8px">Sigue sonando si no cerrás la pestaña.</p>' : '');
   }
 
@@ -207,6 +214,8 @@
     synth.cancel();
     var a = state.article;
     if (!a || index >= a.sentences.length) { state.playing = false; render(); return; }
+    if (index < 0) index = 0;
+    state.currentSentence = index;
     var u = new SpeechSynthesisUtterance(a.sentences[index]);
     u.rate = state.speed; u.lang = 'es-ES';
     u.onend = function () {
@@ -215,17 +224,84 @@
       state.currentSentence = index + 1; render(); speakFrom(index + 1);
     };
     synth.speak(u);
+    render();
+  }
+  function startPlayback() {
+    if (state.currentSentence === 0 && !state._titleRead) {
+      state._titleRead = true;
+      synth.cancel();
+      var tu = new SpeechSynthesisUtterance(state.article.title);
+      tu.rate = state.speed; tu.lang = 'es-ES';
+      tu.onend = function () { if (state.playing) speakFrom(0); };
+      synth.speak(tu);
+    } else {
+      speakFrom(state.currentSentence);
+    }
   }
   function togglePlay() {
     if (state.playing) { state.playing = false; synth.cancel(); render(); return; }
-    state.playing = true; render(); speakFrom(state.currentSentence);
+    state.playing = true; render(); startPlayback();
+  }
+  function seekTo(index) {
+    var total = state.article.sentences.length;
+    index = Math.max(0, Math.min(total - 1, index));
+    state._titleRead = true;
+    if (state.playing) { speakFrom(index); }
+    else { state.currentSentence = index; render(); }
   }
   function stopPlayback() { state.playing = false; synth.cancel(); }
 
+  // ---- record & download audio (tab-audio capture, no external API) ----
+  function recordAndDownload() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      state.error = 'Tu navegador no soporta grabar audio de la pestaña. Probá en Chrome o Edge de escritorio.'; render(); return;
+    }
+    stopPlayback();
+    navigator.mediaDevices.getDisplayMedia({ video: true, audio: true, preferCurrentTab: true })
+      .then(function (stream) {
+        var audioTracks = stream.getAudioTracks();
+        if (audioTracks.length === 0) {
+          stream.getTracks().forEach(function (t) { t.stop(); });
+          state.error = 'No se compartió el audio de la pestaña — al compartir, tildá "Compartir audio de la pestaña".'; render(); return;
+        }
+        var audioStream = new MediaStream(audioTracks);
+        var chunks = [];
+        var recorder;
+        try { recorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' }); }
+        catch (e) { recorder = new MediaRecorder(audioStream); }
+        recorder.ondataavailable = function (e) { if (e.data.size > 0) chunks.push(e.data); };
+        recorder.onstop = function () {
+          stream.getTracks().forEach(function (t) { t.stop(); });
+          var blob = new Blob(chunks, { type: 'audio/webm' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url; a.download = (state.article.title || 'kodama-audio').slice(0, 60).replace(/[^\w\- ]/g, '') + '.webm';
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+          state.recording = false; render();
+        };
+        state.recording = true; render();
+        recorder.start();
+        var all = [state.article.title].concat(state.article.sentences);
+        var i = 0;
+        function speakNext() {
+          if (i >= all.length) { recorder.stop(); return; }
+          var u = new SpeechSynthesisUtterance(all[i]);
+          u.rate = state.speed; u.lang = 'es-ES';
+          u.onend = function () { i++; speakNext(); };
+          synth.speak(u);
+        }
+        speakNext();
+      })
+      .catch(function () {
+        state.error = 'No se pudo grabar (cancelaste el permiso, o el navegador lo bloqueó).'; render();
+      });
+  }
+
   // ---- API ----
-  function requestClean(type, content, sourceHintText) {
-    state.loading = true; state.error = null; state.loadingMsg = type === 'link' ? 'Abriendo el link…' : 'Limpiando el contenido…'; render();
-    fetch('/api/clean', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ type: type, content: content }) })
+  function requestClean(type, content, filename) {
+    state.loading = true; state.error = null; state.loadingMsg = type === 'link' ? 'Abriendo el link…' : (type === 'file' ? 'Leyendo el archivo…' : 'Limpiando el contenido…'); render();
+    fetch('/api/clean', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ type: type, content: content, filename: filename }) })
       .then(function (r) {
         return r.text().then(function (raw) {
           var data;
@@ -237,7 +313,7 @@
       .then(function (res) {
         state.loading = false;
         if (!res.ok) { state.error = res.data.error || res.data.message || ('Error ' + res.status + ' — ' + JSON.stringify(res.data).slice(0, 200)); state.screen = type === 'link' ? 'pasteLink' : (type === 'text' ? 'pasteText' : 'uploadFile'); render(); return; }
-        state.article = res.data; state.cleanedEditable = res.data.sentences.join('\n\n'); state.reviewView = 'limpio'; state.error = null; state.screen = 'review'; render();
+        state.article = res.data; state.cleanedEditable = res.data.sentences.join('\n\n'); state.reviewView = 'limpio'; state.error = null; state._titleRead = false; state.currentSentence = 0; state.screen = 'review'; render();
       })
       .catch(function (err) {
         state.loading = false; state.error = 'Error de red: ' + err.message;
@@ -264,8 +340,12 @@
         var art = state.article;
         state.recientes = [{ article: art }].concat(state.recientes); saveRecientes();
         state.speed = state.defaults.speed; state.darkReading = state.defaults.darkReading; state.bgPlayback = state.defaults.bgPlayback;
-        state.currentSentence = 0; state.playing = false; state.screen = 'player'; break;
+        state.currentSentence = 0; state.playing = false; state._titleRead = false; state.screen = 'player'; break;
       case 'toggle-play': togglePlay(); return;
+      case 'prev-sentence': seekTo(state.currentSentence - 1); return;
+      case 'next-sentence': seekTo(state.currentSentence + 1); return;
+      case 'seek': seekTo(parseInt(value, 10)); return;
+      case 'record-audio': recordAndDownload(); return;
       case 'set-speed': state.speed = parseFloat(value); if (state.playing) speakFrom(state.currentSentence); break;
       case 'toggle-highlight': state.highlightOn = !state.highlightOn; break;
       case 'toggle-dark': state.darkReading = !state.darkReading; break;
@@ -273,7 +353,7 @@
       case 'tab-nuevo': stopPlayback(); state.screen = 'home'; state.activeTab = 'nuevo'; break;
       case 'tab-recientes': stopPlayback(); state.screen = 'recientes'; state.activeTab = 'recientes'; break;
       case 'tab-ajustes': stopPlayback(); state.screen = 'ajustes'; state.activeTab = 'ajustes'; break;
-      case 'reopen': var r = state.recientes[parseInt(value, 10)]; state.article = r.article; state.currentSentence = 0; state.playing = false; state.screen = 'player'; break;
+      case 'reopen': var r = state.recientes[parseInt(value, 10)]; state.article = r.article; state.currentSentence = 0; state.playing = false; state._titleRead = false; state.screen = 'player'; break;
       case 'set-default-speed': state.defaults.speed = parseFloat(value); saveDefaults(); break;
       case 'set-default-dark': state.defaults.darkReading = value === '1'; saveDefaults(); break;
       case 'set-default-bg': state.defaults.bgPlayback = value === '1'; saveDefaults(); break;
@@ -289,10 +369,20 @@
     else if (e.target.id === 'file-input') {
       var file = e.target.files[0];
       if (!file) return;
-      if (!/\.txt$/i.test(file.name)) { state.error = 'Por ahora solo se soportan archivos .txt.'; render(); return; }
-      var reader = new FileReader();
-      reader.onload = function () { requestClean('text', reader.result); };
-      reader.readAsText(file);
+      var ext = file.name.toLowerCase().split('.').pop();
+      if (['txt', 'pdf', 'docx'].indexOf(ext) === -1) { state.error = 'Formato no soportado. Usá .txt, .pdf o .docx.'; render(); return; }
+      if (ext === 'txt') {
+        var reader = new FileReader();
+        reader.onload = function () { requestClean('text', reader.result); };
+        reader.readAsText(file);
+      } else {
+        var reader2 = new FileReader();
+        reader2.onload = function () {
+          var base64 = reader2.result.split(',')[1];
+          requestClean('file', base64, file.name);
+        };
+        reader2.readAsDataURL(file);
+      }
     }
   });
 

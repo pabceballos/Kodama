@@ -1,4 +1,5 @@
-// Vercel serverless function: POST { type: 'text'|'link', content: string }
+// Vercel serverless function: POST { type: 'text'|'link'|'file', content: string, filename?: string }
+// For type 'file', content is a base64-encoded file (.txt/.pdf/.docx).
 // Returns { title, sourceTag, readTime, sentences: string[] }
 // Requires env var ANTHROPIC_API_KEY set in the Vercel project.
 
@@ -31,8 +32,8 @@ module.exports = async (req, res) => {
   if (!body || typeof body === 'string') {
     try { body = JSON.parse(typeof body === 'string' ? body : '{}'); } catch (e) { body = {}; }
   }
-  const { type, content } = body || {};
-  if (!content || !content.trim()) {
+  const { type, content, filename } = body || {};
+  if (!content || (type !== 'file' && !content.trim())) {
     res.status(400).json({ error: 'Falta contenido para limpiar.' });
     return;
   }
@@ -45,7 +46,26 @@ module.exports = async (req, res) => {
   let sourceTag = 'Texto pegado';
 
   try {
-    if (type === 'link') {
+    if (type === 'file') {
+      sourceTag = filename || 'Archivo subido';
+      const buffer = Buffer.from(content, 'base64');
+      const ext = (filename || '').toLowerCase().split('.').pop();
+      if (ext === 'pdf') {
+        const pdfParse = require('pdf-parse');
+        const data = await pdfParse(buffer);
+        rawText = (data.text || '').slice(0, 9000);
+      } else if (ext === 'docx') {
+        const mammoth = require('mammoth');
+        const result = await mammoth.extractRawText({ buffer });
+        rawText = (result.value || '').slice(0, 9000);
+      } else {
+        rawText = buffer.toString('utf8').slice(0, 9000);
+      }
+      if (!rawText.trim()) {
+        res.status(400).json({ error: 'No se pudo extraer texto de ese archivo.' });
+        return;
+      }
+    } else if (type === 'link') {
       const url = content.trim();
       let hostname = 'link';
       try { hostname = new URL(url).hostname; } catch (e) {}
