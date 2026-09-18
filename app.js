@@ -124,7 +124,7 @@
     var total = a.sentences.length;
     var progress = total > 1 ? Math.round((state.currentSentence / (total - 1)) * 100) : (state.playing ? 100 : 0);
     var activeBtn = 'background:var(--color-accent);color:var(--color-bg);border-color:var(--color-accent)';
-    return '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><span class="tag tag-accent">' + esc(a.sourceTag) + '</span></div>' +
+    return errorBanner() + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><span class="tag tag-accent">' + esc(a.sourceTag) + '</span></div>' +
       '<h5 style="margin-bottom:16px">' + esc(a.title) + '</h5>' +
       '<div style="margin-bottom:16px">' + sentencesHtml + '</div>' +
       '<div style="height:3px;background:var(--color-divider);margin-bottom:16px"><div style="height:3px;background:var(--color-accent);width:' + progress + '%"></div></div>' +
@@ -141,7 +141,7 @@
       '</div>' +
       '<button class="btn btn-secondary btn-block" data-action="record-audio" ' + (state.recording ? 'disabled' : '') + '>' + (state.recording ? 'Grabando…' : 'Descargar audio (MP3/WebM)') + '</button>' +
       '<p class="kv-muted" style="font-size:11px;margin-top:6px">Te va a pedir compartir esta pestaña con audio — funciona mejor en Chrome/Edge de escritorio.</p>' +
-      (state.bgPlayback ? '<p class="kv-muted" style="font-size:11.5px;margin-top:8px">Sigue sonando si no cerrás la pestaña.</p>' : '');
+      (state.bgPlayback ? '<p class="kv-muted" style="font-size:11.5px;margin-top:8px">Mantiene la pantalla activa mientras lee. Con la pantalla bloqueada, puede cortarse según el celular (iOS casi siempre la corta).</p>' : '');
   }
 
   function screenRecientes() {
@@ -220,8 +220,8 @@
     u.rate = state.speed; u.lang = 'es-ES';
     u.onend = function () {
       if (!state.playing) return;
-      if (index + 1 >= a.sentences.length) { state.playing = false; state.currentSentence = index; render(); return; }
-      state.currentSentence = index + 1; render(); speakFrom(index + 1);
+      if (index + 1 >= a.sentences.length) { state.playing = false; state.currentSentence = index; render(); updateMediaSession(); releaseWakeLock(); return; }
+      state.currentSentence = index + 1; render(); updateMediaSession(); speakFrom(index + 1);
     };
     synth.speak(u);
     render();
@@ -239,8 +239,8 @@
     }
   }
   function togglePlay() {
-    if (state.playing) { state.playing = false; synth.cancel(); render(); return; }
-    state.playing = true; render(); startPlayback();
+    if (state.playing) { state.playing = false; synth.cancel(); releaseWakeLock(); render(); updateMediaSession(); return; }
+    state.playing = true; requestWakeLock(); render(); updateMediaSession(); startPlayback();
   }
   function seekTo(index) {
     var total = state.article.sentences.length;
@@ -249,7 +249,24 @@
     if (state.playing) { speakFrom(index); }
     else { state.currentSentence = index; render(); }
   }
-  function stopPlayback() { state.playing = false; synth.cancel(); }
+  function stopPlayback() { state.playing = false; synth.cancel(); releaseWakeLock(); }
+
+  // ---- Media Session (lock-screen controls) + wake lock (keep screen on while reading) ----
+  var wakeLock = null;
+  function requestWakeLock() {
+    if (!state.bgPlayback || !navigator.wakeLock) return;
+    navigator.wakeLock.request('screen').then(function (wl) { wakeLock = wl; }).catch(function () {});
+  }
+  function releaseWakeLock() { if (wakeLock) { wakeLock.release().catch(function () {}); wakeLock = null; } }
+  function updateMediaSession() {
+    if (!('mediaSession' in navigator) || !state.article) return;
+    navigator.mediaSession.metadata = new MediaMetadata({ title: state.article.title, artist: state.article.sourceTag || 'Kodama Virtual' });
+    navigator.mediaSession.playbackState = state.playing ? 'playing' : 'paused';
+    navigator.mediaSession.setActionHandler('play', function () { togglePlay(); });
+    navigator.mediaSession.setActionHandler('pause', function () { togglePlay(); });
+    navigator.mediaSession.setActionHandler('previoustrack', function () { seekTo(state.currentSentence - 1); });
+    navigator.mediaSession.setActionHandler('nexttrack', function () { seekTo(state.currentSentence + 1); });
+  }
 
   // ---- record & download audio (tab-audio capture, no external API) ----
   function recordAndDownload() {
